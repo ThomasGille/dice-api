@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
-const Cat = mongoose.model('Cat', { name: String });
+const User = mongoose.model('User', { name: String, password: String });
 
 'use strict';
 
@@ -8,34 +8,58 @@ const Hapi = require('hapi');
 
 const server = new Hapi.Server();
 server.connection({ port: process.env.PORT || 3000, host: '0.0.0.0' });
-let dbURI = process.env.MONGODB_URI;
-if(!dbURI) {
-    dbURI = 'mongodb://localhost/test';
-}
-mongoose.connect(dbURI);
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/test');
 
 server.route({
     method: 'GET',
     path: '/',
     handler: function (request, reply) {
-        Cat.find(function (err, cats) {
+        reply('Dice API up and running @ https://api-dice.herokuapp.com/')
+    }
+});
+
+server.route({
+    method: 'GET',
+    path: '/users',
+    handler: function (request, reply) {
+        User.find(function (err, users) {
             if (err) return console.error(err);
-            reply(cats);
+            reply(users);
         });
     }
 });
 
 server.route({
-    method: 'POST',
-    path: '/users/{name}',
+    method: 'GET',
+    path: '/users/{id}',
     handler: function (request, reply) {
-        const kitty = new Cat({ name: request.params.name });
-        kitty.save().then((kitty) => reply(kitty)).catch((e) => {console.log(e)});
+        User.find({
+            _id: request.params.id
+        }, function (err, docs) {
+            reply(docs);
+        });
     },
     config: {
         validate: {
             params: {
-                name: Joi.string().min(3).max(20)
+                id: Joi.string().required(),
+            }
+        }
+    }
+});
+
+server.route({
+    method: 'POST',
+    path: '/users/',
+    handler: function (request, reply) {
+        const kitty = new User({ name: request.payload.name, password: request.payload.password });
+        kitty.save().then((kitty) => reply(kitty)).catch((e) => {console.log(e)});
+    },
+    config: {
+        validate: {
+            payload: {
+                name: Joi.string().min(3).max(20).required(),
+                password: Joi.string().min(3).max(20).required(),
             }
         }
     }
@@ -43,28 +67,27 @@ server.route({
 
 server.route({
     method: 'DELETE',
-    path: '/users/{name}',
+    path: '/users/{id}',
     handler: function (request, reply) {
-        Cat.find({
-            name: request.params.name
+        User.find({
+            _id: request.params.id
         }, function (err, docs) {
             docs.forEach((el) => el.remove()); //Remove all the documents that match!
-            reply('OK, DELETED!');
+            reply().code(200);
         });
     },
     config: {
         validate: {
             params: {
-                name: Joi.string().min(3).max(20)
+                id: Joi.string().required(),
             }
         }
     }
 });
 
 server.start((err) => {
-
     if (err) {
         throw err;
     }
-    console.log(`Server running at: ${server.info.uri}`);
+    console.log('API is up and running')
 });
