@@ -7,7 +7,7 @@ const Cat = mongoose.model('Cat', { name: String });
 const Hapi = require('hapi');
 
 const server = new Hapi.Server();
-server.connection({ port: 3000, host: 'localhost' });
+server.connection({ port: process.env.PORT || 3000, host: 'localhost' });
 let dbURI = process.env.MONGODB_URI;
 if(!dbURI) {
     dbURI = 'mongodb://localhost/test';
