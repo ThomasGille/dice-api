@@ -4,6 +4,7 @@
   "description": "MongoDB POC with Hapi",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Thomas Gille",
@@ -12,6 +13,10 @@
     "hapi": "^16.2.0",
     "joi": "^13.1.2",
     "mongodb": "^3.0.2",
-    "mongoose": "^5.0.5"
+    "mongoose": "^5.0.5",
+    "node": "^9.5.0"
+  },
+  "engines": {
+    "node": "^9.5.0"
   }
 }
