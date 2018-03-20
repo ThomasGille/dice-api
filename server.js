@@ -1,6 +1,19 @@
 const mongoose = require('mongoose');
+var Schema = mongoose.Schema;
 const Joi = require('joi');
-const User = mongoose.model('User', { name: String, password: String });
+
+var monsterSchema = new Schema({
+    name: String,
+    health: Number
+});
+const Monster = mongoose.model('Monster', monsterSchema);
+
+var childSchema = new Schema({ name: String });
+const User = mongoose.model('User', { 
+    name: String,
+    password: String,
+    monsters: [monsterSchema]
+});
 
 'use strict';
 
@@ -80,6 +93,28 @@ server.route({
         validate: {
             params: {
                 id: Joi.string().required(),
+            }
+        }
+    }
+});
+
+server.route({
+    method: 'POST',
+    path: '/users/{id}/monsters',
+    handler: function (request, reply) {
+        User.find({
+            _id: request.params.id
+        }, function (err, docs) {
+            let user = docs[0];
+            user.monsters.push({ name: request.payload.name, health: request.payload.health });
+            user.save().then((data) => reply(data)).catch((e) => {console.log(e)});
+        });
+    },
+    config: {
+        validate: {
+            payload: {
+                name: Joi.string().min(3).max(20).required(),
+                health: Joi.number().min(1).required(),
             }
         }
     }
