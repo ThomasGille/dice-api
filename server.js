@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 const Joi = require('joi');
+const hapicors = require('hapi-cors');
 
 var monsterSchema = new Schema({
     name: String,
@@ -20,7 +21,10 @@ const User = mongoose.model('User', {
 const Hapi = require('hapi');
 
 const server = new Hapi.Server();
-server.connection({ port: process.env.PORT || 3000, host: '0.0.0.0' });
+server.connection({ 
+    port: process.env.PORT || 3000,
+    host: '0.0.0.0',
+});
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/test');
 
 server.route({
@@ -119,6 +123,17 @@ server.route({
         }
     }
 });
+
+server.register([
+    {
+        register: hapicors,
+        options: {
+            headers: ['authorization', 'content-type'],
+            origins: ['*'],
+            methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'DELETE'],
+        },
+    },
+])
 
 server.start((err) => {
     if (err) {

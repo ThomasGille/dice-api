@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "hapi": "^16.2.0",
+    "hapi-cors": "^1.0.1",
     "joi": "^13.1.2",
     "mongodb": "^3.0.2",
     "mongoose": "^5.0.5",
