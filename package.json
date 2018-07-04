@@ -10,14 +10,16 @@
   "author": "Thomas Gille",
   "license": "ISC",
   "dependencies": {
-    "hapi": "^16.2.0",
-    "hapi-cors": "^1.0.1",
-    "joi": "^13.1.2",
-    "mongodb": "^3.0.2",
-    "mongoose": "^5.0.5",
-    "node": "^9.5.0"
+    "hapi": "^17.5.0",
+    "hapi-swagger": "^9.1.1",
+    "inert": "^5.1.0",
+    "joi": "^13.4.0",
+    "mongodb": "^3.1.0",
+    "mongoose": "^5.2.1",
+    "node": "^9.11.2",
+    "vision": "^5.3.3"
   },
   "engines": {
-    "node": "^9.5.0"
+    "node": "^10.5.0"
   }
 }
