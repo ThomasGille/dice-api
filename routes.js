@@ -18,7 +18,8 @@ module.exports = (server) => {
         path: '/users',
         handler: async (request, h) => {
             return new Promise((reply, reject) => {
-                User.find(function (err, users) {
+                User.find().populate('monsters')
+                .exec(function (err, users) {
                     if (err) console.error(err);
                     reply(users);
                 });
@@ -163,7 +164,10 @@ module.exports = (server) => {
         path: '/games',
         handler: async (request, h) => {
             return new Promise((reply, reject) => {
-                Game.find(function (err, games) {
+                Game.find()
+                .populate('_dices')
+                .populate('_monsters')
+                .exec(function (err, games) {
                     if (err) console.error(err);
                     reply(games);
                 });
@@ -217,6 +221,48 @@ module.exports = (server) => {
             validate: {
                 params: {
                     id: Joi.string().required(),
+                }
+            }
+        },
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/games/{id}/dices',
+        handler: function (request, h) {
+            return new Promise((reply, reject) => {
+
+                let addedDice = new Dice({
+                    name: request.payload.name,
+                    number: request.payload.number,
+                    type: request.payload.type,
+                    bonus: request.payload.bonus,
+                });
+
+                addedDice.save(function(err, dice) {
+                  Game.findById(request.params.id, function(err, game) {
+                    game._dices.push(addedDice);
+                    game.save(function(err, savedGame) {
+                      if(err) reject(err);
+                      reply(savedGame);
+                    });
+                  });
+                });
+            });
+        },
+        config: {
+            description: 'Add dice to game',
+            notes: 'Returns game',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                },
+                payload: {
+                    name: Joi.string().required(),
+                    number: Joi.number().min(1).required(),
+                    type: Joi.number().required().valid([2,3,4,6,8,10,12,20,100]),
+                    bonus: Joi.number().required(),
                 }
             }
         },
