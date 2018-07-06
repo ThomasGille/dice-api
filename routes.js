@@ -1,6 +1,8 @@
 const Joi = require('joi');
 const User = require('./models/user.model');
 const Monster = require('./models/monster.model');
+const Dice = require('./models/dice.model');
+const Game = require('./models/game.model');
 
 module.exports = (server) => {
     server.route({
@@ -150,5 +152,73 @@ module.exports = (server) => {
             notes: 'Returns a list of monsters',
             tags: ['api'], // ADD THIS TAG
         }
+    });
+
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////// GAME ROUTES /////////////////////////
+    ////////////////////////////////////////////////////////////////
+
+    server.route({
+        method: 'GET',
+        path: '/games',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                Game.find(function (err, games) {
+                    if (err) console.error(err);
+                    reply(games);
+                });
+            });
+        },
+        config: {
+            description: 'Get all games',
+            notes: 'Returns a list of games',
+            tags: ['api'], // ADD THIS TAG
+        }
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/games',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                const createdGame = new Game({ name: request.payload.name });
+                createdGame.save().then((game) => {reply(game)}).catch((e) => {console.log(e)});
+            });
+        },
+        config: {
+            description: 'Create game by name',
+            notes: 'Returns the created game',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                payload: {
+                    name: Joi.string().min(3).max(20).required(),
+                }
+            }
+        },
+    });
+
+    server.route({
+        method: 'DELETE',
+        path: '/games/{id}',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                Game.find({
+                    _id: request.params.id
+                }, function (err, docs) {
+                    docs.forEach((el) => el.remove()); //Remove all the documents that match!
+                    reply(`Game ${request.params.id} deleted`);
+                });
+            });
+        },
+        config: {
+            description: 'Delete game by id',
+            notes: 'Delete a game',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                }
+            }
+        },
     });
 };
