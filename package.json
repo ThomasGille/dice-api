@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
+    "s": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Thomas Gille",
@@ -21,5 +22,8 @@
   },
   "engines": {
     "node": "^10.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.17.5"
   }
 }
