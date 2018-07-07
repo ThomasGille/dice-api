@@ -1,4 +1,6 @@
 const Joi = require('joi');
+const mongoose = require('mongoose');
+
 const User = require('./models/user.model');
 const Monster = require('./models/monster.model');
 const Dice = require('./models/dice.model');
@@ -156,6 +158,63 @@ module.exports = (server) => {
     });
 
     ////////////////////////////////////////////////////////////////
+    ////////////////////////// DICE ROUTES /////////////////////////
+    ////////////////////////////////////////////////////////////////
+
+    server.route({
+        method: 'GET',
+        path: '/dices',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                Dice.find(function (err, users) {
+                    if (err) console.error(err);
+                    reply(users);
+                });
+            });
+        },
+        config: {
+            description: 'Get all dices',
+            notes: 'Returns a list of dice',
+            tags: ['api'], // ADD THIS TAG
+        }
+    });
+
+    server.route({
+        method: 'PUT',
+        path: '/dices/{id}',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                payload = request.payload;
+                Dice.findOneAndUpdate({_id: request.params.id}, {
+                    'name': payload.name,
+                    'number': payload.number,
+                    'type': payload.type,
+                    'bonus': payload.bonus,
+                }, {new:true} , function(err, doc) {
+                    if(err) reject(err);
+                    else reply(doc);
+                });
+            });
+        },
+        config: {
+            description: 'Update a dice',
+            notes: 'Returns the dice',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                },
+                payload: {
+                    name: Joi.string().required(),
+                    number: Joi.number().min(1).required(),
+                    type: Joi.number().required().valid([2,3,4,6,8,10,12,20,100]),
+                    bonus: Joi.number().required(),
+                }
+            }
+        }
+    });
+
+    ////////////////////////////////////////////////////////////////
     ////////////////////////// GAME ROUTES /////////////////////////
     ////////////////////////////////////////////////////////////////
 
@@ -165,8 +224,6 @@ module.exports = (server) => {
         handler: async (request, h) => {
             return new Promise((reply, reject) => {
                 Game.find()
-                .populate('_dices')
-                .populate('_monsters')
                 .exec(function (err, games) {
                     if (err) console.error(err);
                     reply(games);
@@ -177,6 +234,33 @@ module.exports = (server) => {
             description: 'Get all games',
             notes: 'Returns a list of games',
             tags: ['api'], // ADD THIS TAG
+        }
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/games/{id}',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                Game.findOne({
+                    _id: request.params.id
+                }).populate('_dices')
+                .populate('_monsters')
+                .exec(function (err, game) {
+                    if (err) console.error(err);
+                    reply(game);
+                });
+            });
+        },
+        config: {
+            description: 'Get game by id',
+            notes: 'Returns a single game with dices & monsters populated',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                }
+            }
         }
     });
 
@@ -244,7 +328,7 @@ module.exports = (server) => {
                     game._dices.push(addedDice);
                     game.save(function(err, savedGame) {
                       if(err) reject(err);
-                      reply(savedGame);
+                      else reply(savedGame);
                     });
                   });
                 });
@@ -266,5 +350,34 @@ module.exports = (server) => {
                 }
             }
         },
+    });
+
+    server.route({
+        method: 'DELETE',
+        path: '/games/{id}/dices/{diceId}',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                Game.findOne({
+                    _id: request.params.id
+                }).populate('_dices')
+                .exec(function (err, game) {
+                    if (err) console.error(err);
+                    game._dices.remove({_id: request.params.diceId})
+                    game.save();
+                    reply(game);
+                });
+            });
+        },
+        config: {
+            description: 'Remove a dice from a game',
+            notes: 'Returns a single game with dices populated',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                    diceId: Joi.string().required(),
+                }
+            }
+        }
     });
 };
