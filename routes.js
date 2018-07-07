@@ -210,7 +210,7 @@ module.exports = (server) => {
                     _id: request.params.id
                 }, function (err, docs) {
                     docs.forEach((el) => el.remove()); //Remove all the documents that match!
-                    reply(`Game ${request.params.id} deleted`);
+                    reply(JSON.stringify(`Game ${request.params.id} deleted`));
                 });
             });
         },
