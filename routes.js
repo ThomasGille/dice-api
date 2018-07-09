@@ -328,7 +328,7 @@ module.exports = (server) => {
                     game._dices.push(addedDice);
                     game.save(function(err, savedGame) {
                       if(err) reject(err);
-                      else reply(savedGame);
+                      else reply(addedDice);
                     });
                   });
                 });
