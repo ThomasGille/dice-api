@@ -259,9 +259,7 @@ module.exports = (server) => {
                     'number': payload.number,
                     'type': payload.type,
                     'bonus': payload.bonus,
-                }
-                if (payload.objective) {
-                    updatePayload.objective = payload.objective;
+                    'objective': payload.objective,
                 }
                 Dice.findOneAndUpdate({_id: request.params.id}, updatePayload, {new:true} , function(err, doc) {
                     if(err) reject(err);
@@ -282,7 +280,7 @@ module.exports = (server) => {
                     number: Joi.number().min(1).required(),
                     type: Joi.number().required().valid([2,3,4,6,8,10,12,20,100]),
                     bonus: Joi.number().required(),
-                    objective : Joi.number().min(1).allow(null),
+                    objective : Joi.number().min(1).allow(null).required(),
                 }
             }
         }
