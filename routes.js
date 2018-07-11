@@ -220,7 +220,7 @@ module.exports = (server) => {
                     health: Joi.number().min(1).required(),
                     x: Joi.number().min(0).required(),
                     y: Joi.number().min(0).required(),
-                    pictureLink: Joi.string(),
+                    pictureLink: Joi.string().allow(null),
                 }
             }
         }
@@ -282,7 +282,7 @@ module.exports = (server) => {
                     number: Joi.number().min(1).required(),
                     type: Joi.number().required().valid([2,3,4,6,8,10,12,20,100]),
                     bonus: Joi.number().required(),
-                    objective : Joi.number().min(1),
+                    objective : Joi.number().min(1).allow(null),
                 }
             }
         }
