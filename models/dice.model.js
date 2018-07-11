@@ -8,4 +8,5 @@ module.exports = mongoose.model('Dice', new Schema({
     number: Number,
     type: Number,
     bonus: Number,
+    objective : Number,
 }));

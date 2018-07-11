@@ -254,12 +254,16 @@ module.exports = (server) => {
         handler: async (request, h) => {
             return new Promise((reply, reject) => {
                 payload = request.payload;
-                Dice.findOneAndUpdate({_id: request.params.id}, {
+                updatePayload =  {
                     'name': payload.name,
                     'number': payload.number,
                     'type': payload.type,
                     'bonus': payload.bonus,
-                }, {new:true} , function(err, doc) {
+                }
+                if (payload.objective) {
+                    updatePayload.objective = payload.objective;
+                }
+                Dice.findOneAndUpdate({_id: request.params.id}, updatePayload, {new:true} , function(err, doc) {
                     if(err) reject(err);
                     else reply(doc);
                 });
@@ -278,6 +282,7 @@ module.exports = (server) => {
                     number: Joi.number().min(1).required(),
                     type: Joi.number().required().valid([2,3,4,6,8,10,12,20,100]),
                     bonus: Joi.number().required(),
+                    objective : Joi.number().min(1),
                 }
             }
         }
