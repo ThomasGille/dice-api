@@ -5,6 +5,7 @@ const User = require('./models/user.model');
 const Monster = require('./models/monster.model');
 const Dice = require('./models/dice.model');
 const Game = require('./models/game.model');
+const defaultMonsterPictureLink = 'https://vignette1.wikia.nocookie.net/geometry-dash/images/d/d3/Icon_%2831%29.png/revision/latest/scale-to-width-down/185?cb=20151215043127&path-prefix=es';
 
 module.exports = (server) => {
     server.route({
@@ -65,7 +66,7 @@ module.exports = (server) => {
         handler: async (request, h) => {
             return new Promise((reply, reject) => {
                 const createdUser = new User({ name: request.payload.name, password: request.payload.password });
-                createdUser.save().then((kitty) => {reply(kitty)}).catch((e) => {console.log(e)});
+                createdUser.save().then((kitty) => {reply(kitty)}).catch((e) => {console.error(e)});
             });
         },
         config: {
@@ -111,12 +112,10 @@ module.exports = (server) => {
         path: '/users/{id}/monsters',
         handler: function (request, h) {
             return new Promise((reply, reject) => {
-                console.log('ID : ', request.params.id);
                 User.find({
                     _id: request.params.id
                 }, function (err, docs) {
                     if (err) reject(err);
-                    console.log(docs);
                     let user = docs[0];
                     user.monsters.push(new Monster({ name: request.payload.name, health: request.payload.health }));
                     user.save().then((data) => reply(data)).catch((e) => {console.error(e)});
@@ -139,6 +138,10 @@ module.exports = (server) => {
         },
     });
 
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////// MONSTER ROUTES /////////////////////////
+    ////////////////////////////////////////////////////////////////
+
     server.route({
         method: 'GET',
         path: '/monsters',
@@ -154,6 +157,72 @@ module.exports = (server) => {
             description: 'Get all monsters',
             notes: 'Returns a list of monsters',
             tags: ['api'], // ADD THIS TAG
+        }
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/monsters/{id}',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                Monster.findOne({
+                    _id: request.params.id
+                }).populate('_dices')
+                .exec(function (err, monster) {
+                    if (err) console.error(err);
+                    reply(monster);
+                });
+            });
+        },
+        config: {
+            description: 'Get monster by id',
+            notes: 'Returns a single monster with dices populated',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                }
+            }
+        }
+    });
+
+    server.route({
+        method: 'PUT',
+        path: '/monsters/{id}',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                payload = request.payload;
+                updatePayload = {
+                    'name': payload.name,
+                    'health': payload.health,
+                    'x': payload.x,
+                    'y': payload.y,
+                }
+                if (payload.pictureLink) {
+                    updatePayload.pictureLink = payload.pictureLink;
+                }
+                Monster.findOneAndUpdate({_id: request.params.id}, updatePayload, {new:true} , function(err, doc) {
+                    if(err) reject(err);
+                    else reply(doc);
+                });
+            });
+        },
+        config: {
+            description: 'Update a monster',
+            notes: 'Returns the monster',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                },
+                payload: {
+                    name: Joi.string().min(1).required(),
+                    health: Joi.number().min(1).required(),
+                    x: Joi.number().min(0).required(),
+                    y: Joi.number().min(0).required(),
+                    pictureLink: Joi.string(),
+                }
+            }
         }
     });
 
@@ -270,7 +339,7 @@ module.exports = (server) => {
         handler: async (request, h) => {
             return new Promise((reply, reject) => {
                 const createdGame = new Game({ name: request.payload.name });
-                createdGame.save().then((game) => {reply(game)}).catch((e) => {console.log(e)});
+                createdGame.save().then((game) => {reply(game)}).catch((e) => {console.error(e)});
             });
         },
         config: {
@@ -308,6 +377,79 @@ module.exports = (server) => {
                 }
             }
         },
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/games/{id}/monsters',
+        handler: function (request, h) {
+            return new Promise((reply, reject) => {
+                payload = request.payload;
+                let addedMonster = new Monster({
+                    'name': payload.name,
+                    'health': payload.health,
+                    'x': payload.x,
+                    'y': payload.y,
+                    'pictureLink': payload.pictureLink ? payload.pictureLink : defaultMonsterPictureLink,
+                });
+
+                addedMonster.save(function(err, monster) {
+                  Game.findById(request.params.id, function(err, game) {
+                    game._monsters.push(addedMonster);
+                    game.save(function(err, savedGame) {
+                      if(err) reject(err);
+                      else reply(addedMonster);
+                    });
+                  });
+                });
+            });
+        },
+        config: {
+            description: 'Add monster to game',
+            notes: 'Returns game',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                },
+                payload: {
+                    name: Joi.string().min(1).required(),
+                    health: Joi.number().min(1).required(),
+                    x: Joi.number().min(0).required(),
+                    y: Joi.number().min(0).required(),
+                    pictureLink: Joi.string(),
+                }
+            }
+        },
+    });
+
+    server.route({
+        method: 'DELETE',
+        path: '/games/{id}/monsters/{monsterId}',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                Game.findOne({
+                    _id: request.params.id
+                }).populate('_monsters')
+                .exec(function (err, game) {
+                    if (err) console.error(err);
+                    game._monsters.remove({_id: request.params.monsterId})
+                    game.save();
+                    reply(game);
+                });
+            });
+        },
+        config: {
+            description: 'Remove a monster from a game',
+            notes: 'Returns a single game with monsters populated',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                    monsterId: Joi.string().required(),
+                }
+            }
+        }
     });
 
     server.route({
