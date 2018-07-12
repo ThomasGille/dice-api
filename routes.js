@@ -226,6 +226,77 @@ module.exports = (server) => {
         }
     });
 
+    server.route({
+        method: 'POST',
+        path: '/monsters/{id}/dices',
+        handler: function (request, h) {
+            return new Promise((reply, reject) => {
+
+                let addedDice = new Dice({
+                    name: request.payload.name,
+                    number: request.payload.number,
+                    type: request.payload.type,
+                    bonus: request.payload.bonus,
+                });
+
+                addedDice.save(function(err, dice) {
+                  Monster.findById(request.params.id, function(err, monster) {
+                    monster._dices.push(addedDice);
+                    monster.save(function(err, savedMonster) {
+                      if(err) reject(err);
+                      else reply(addedDice);
+                    });
+                  });
+                });
+            });
+        },
+        config: {
+            description: 'Add dice to monster',
+            notes: 'Returns dice',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                },
+                payload: {
+                    name: Joi.string().required(),
+                    number: Joi.number().min(1).required(),
+                    type: Joi.number().required().valid([2,3,4,6,8,10,12,20,100]),
+                    bonus: Joi.number().required(),
+                }
+            }
+        },
+    });
+
+    server.route({
+        method: 'DELETE',
+        path: '/monsters/{id}/dices/{diceId}',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                Monster.findOne({
+                    _id: request.params.id
+                }).populate('_dices')
+                .exec(function (err, monster) {
+                    if (err) console.error(err);
+                    monster._dices.remove({_id: request.params.diceId})
+                    monster.save();
+                    reply(monster);
+                });
+            });
+        },
+        config: {
+            description: 'Remove a dice from a monster',
+            notes: 'Returns a single monster with dices populated',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                    diceId: Joi.string().required(),
+                }
+            }
+        }
+    });
+
     ////////////////////////////////////////////////////////////////
     ////////////////////////// DICE ROUTES /////////////////////////
     ////////////////////////////////////////////////////////////////
@@ -317,7 +388,13 @@ module.exports = (server) => {
                 Game.findOne({
                     _id: request.params.id
                 }).populate('_dices')
-                .populate('_monsters')
+                .populate({
+                    path: '_monsters',
+                    populate: {
+                      path: '_dices',
+                      model: 'Dice'
+                    }
+                 })
                 .exec(function (err, game) {
                     if (err) console.error(err);
                     reply(game);
