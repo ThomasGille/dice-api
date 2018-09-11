@@ -435,6 +435,36 @@ module.exports = (server) => {
     });
 
     server.route({
+        method: 'PUT',
+        path: '/games/{id}',
+        handler: async (request, h) => {
+            return new Promise((reply, reject) => {
+                payload = request.payload;
+                updatePayload = {
+                    'name': payload.name,
+                }
+                Game.findOneAndUpdate({_id: request.params.id}, updatePayload, {new:true} , function(err, doc) {
+                    if(err) reject(err);
+                    else reply(doc);
+                });
+            });
+        },
+        config: {
+            description: 'Update a game',
+            notes: 'Returns the game',
+            tags: ['api'], // ADD THIS TAG
+            validate: {
+                params: {
+                    id: Joi.string().required(),
+                },
+                payload: {
+                    name: Joi.string().min(1).required(),
+                }
+            }
+        }
+    });
+
+    server.route({
         method: 'DELETE',
         path: '/games/{id}',
         handler: async (request, h) => {
